@@ -1,0 +1,270 @@
+@page "/TotalTransaction"
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<h3 class="text-center mb-4 text-primary">Your Expenses</h3>
+
+<!-- Filters Container -->
+<div class="filters-container mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3 p-3 bg-light rounded shadow-sm">
+    <!-- Sort Button -->
+    <button class="btn btn-primary d-flex align-items-center gap-2" @onclick="ToggleSortOrder">
+        <span class="material-icons">sort</span>
+        Sort by Amount (@(isAscending ? "Ascending" : "Descending"))
+    </button>
+
+    <!-- Category Dropdown -->
+    <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-info text-dark">Filter:</span>
+        <select class="form-select w-auto" @onchange="FilterByCategory">
+            <option value="">All Categories</option>
+            @foreach (var category in categories)
+            {
+                <option value="@category" selected="@(category == selectedCategory)">@category</option>
+            }
+        </select>
+    </div>
+
+    <!-- Search Input -->
+    <div class="input-group search-group w-auto">
+        <input type="text" class="form-control rounded-start"
+               placeholder="Search by remarks..."
+               @bind="searchTerm" />
+        <button class="btn btn-outline-secondary rounded-end" @onclick="SearchByRemarks">🔍</button>
+    </div>
+
+    <!-- Clear Filters Button -->
+    <button class="btn btn-danger d-flex align-items-center gap-2" @onclick="ClearFilters">
+        <span class="material-icons">clear_all</span>
+        Clear Filters
+    </button>
+</div>
+
+<!-- Display Total Amount -->
+@if (filteredExpenses != null && filteredExpenses.Count > 0)
+{
+    <div class="alert alert-info text-center fw-bold fs-5 rounded shadow-sm">
+        Total Amount: <span class="text-success">@filteredExpenses.Sum(e => e.Amount).ToString("C")</span>
+    </div>
+}
+
+<!-- Loading Spinner -->
+@if (filteredExpenses == null)
+{
+    <div class="d-flex justify-content-center">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else if (filteredExpenses.Count == 0)
+{
+    <div class="alert alert-warning text-center rounded shadow-sm">
+        No expenses found. Try adjusting your filters or search.
+    </div>
+}
+else
+{
+    <!-- Expenses Table -->
+    <div class="table-responsive rounded shadow-sm">
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th scope="col">Amount</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var expense in PaginatedExpenses())
+                {
+                    <tr>
+                        <td class="fw-bold text-primary">@expense.Amount.ToString("C")</td>
+                        <td>@expense.Category</td>
+                        <td title="@expense.Remarks">@expense.Remarks</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Indicator -->
+    <div class="d-flex justify-content-center align-items-center mt-3">
+        <span>Page <span class="badge bg-secondary">@currentPage</span> of <span class="badge bg-secondary">@totalPages</span></span>
+    </div>
+}
+
+@code {
+    private List<ExpenseModel> expenses;
+    private List<ExpenseModel> filteredExpenses;
+    private List<string> categories = new();
+    private string selectedCategory = "";
+    private string searchTerm = "";
+    private bool isAscending = true;
+
+    private int currentPage = 1;
+    private int pageSize = 5;
+    private int totalPages => (int)Math.Ceiling((double)(filteredExpenses?.Count ?? 0) / pageSize);
+
+    [CascadingParameter]
+    private GlobalState GlobalState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(500);
+
+        var userId = GlobalState.CurrentUser.Id;
+        expenses = ExpenseService.GetByUserId(userId);
+        categories = expenses.Select(e => e.Category.ToString()).Distinct().OrderBy(c => c).ToList();
+        filteredExpenses = new List<ExpenseModel>(expenses);
+    }
+
+    private void ToggleSortOrder()
+    {
+        isAscending = !isAscending;
+        ApplyFilters();
+    }
+
+    private void FilterByCategory(ChangeEventArgs e)
+    {
+        selectedCategory = e.Value?.ToString() ?? "";
+        ApplyFilters();
+    }
+
+    private void SearchByRemarks()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            return;
+        }
+        ApplyFilters();
+    }
+
+    private void ClearFilters()
+    {
+        selectedCategory = "";
+        searchTerm = "";
+        isAscending = true;
+        filteredExpenses = new List<ExpenseModel>(expenses);
+        currentPage = 1;
+    }
+
+    private void ApplyFilters()
+    {
+        var result = expenses;
+
+        if (!string.IsNullOrEmpty(selectedCategory))
+        {
+            result = result.Where(e => e.Category.ToString() == selectedCategory).ToList();
+        }
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            result = result.Where(e => e.Remarks.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+
+        result = isAscending ? result.OrderBy(e => e.Amount).ToList() : result.OrderByDescending(e => e.Amount).ToList();
+
+        filteredExpenses = result;
+        currentPage = 1;
+    }
+
+    private IEnumerable<ExpenseModel> PaginatedExpenses()
+    {
+        return filteredExpenses.Skip((currentPage - 1) * pageSize).Take(pageSize);
+    }
+}
+
+<style>
+    :root {
+        --primary-color: #007bff; /* Blue */
+        --secondary-color: #0056b3; /* Darker Blue */
+        --background-color: #ffffff;
+        --border-radius: 12px;
+        --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --gradient: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    }
+
+    .filters-container {
+        background: var(--background-color);
+        padding: 1rem;
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+    }
+
+    .btn-primary {
+        background: var(--gradient);
+        border: none;
+        font-size: 1rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: var(--border-radius);
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+    .btn-danger {
+        background: #dc3545;
+        border: none;
+        font-size: 1rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: var(--border-radius);
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .btn-danger:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+    .form-select, .form-control {
+        padding: 0.75rem;
+        font-size: 1rem;
+        border-radius: var(--border-radius);
+        border: 1px solid #ddd;
+        transition: all 0.3s ease;
+    }
+
+        .form-select:focus, .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+        }
+
+    .table {
+        border-radius: var(--border-radius);
+        overflow: hidden;
+    }
+
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: rgba(0, 123, 255, 0.05);
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 123, 255, 0.1);
+    }
+
+    .alert {
+        font-size: 1rem;
+        padding: 0.75rem;
+        text-align: center;
+        border-radius: var(--border-radius);
+    }
+
+    .alert-info {
+        background-color: #e3f2fd;
+        color: #1976d2;
+        border: 1px solid #90caf9;
+    }
+
+    .alert-warning {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeeba;
+    }
+</style>

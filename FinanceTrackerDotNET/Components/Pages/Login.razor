@@ -1,0 +1,199 @@
+﻿@page "/"
+@inject NavigationManager NavManager
+
+<div class="login-body">
+    <div class="form-login">
+        <form class="text-center" @onsubmit="LoginHandler">
+            <h1 class="h1 mb-4 fw-bold">👋 Welcome Back!</h1>
+            <p class="text-muted mb-4" style="font-size: 1.1rem;">Log in to manage your account 📊</p>
+
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control username" @bind="_username" placeholder="Username" />
+                <label for="floatingInput">👤 Username</label>
+            </div>
+            <div class="form-floating mb-4">
+                <input type="password" class="form-control password" @bind="_password" placeholder="Password" />
+                <label for="floatingPassword">🔒 Password</label>
+            </div>
+
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i> @_errorMessage
+                    </div>
+            }
+
+            <button class="w-100 btn btn-lg btn-primary" type="submit">
+                <i class="fas fa-sign-in-alt"></i> Log In 🚀
+            </button>
+        </form>
+
+        <div class="text-center mt-4">
+            <p class="text-muted" style="font-size: 1rem;">
+                Don't have an account? <a href="/register" class="link-primary">Sign up ✨</a>
+            </p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(_debugMessage))
+        {
+                <div class="debug-messages mt-3">
+                    <p>@_debugMessage</p>
+                </div>
+        }
+    </div>
+</div>
+
+<style>
+    .login-body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        font-family: 'Poppins', sans-serif; /* Modern font */
+    }
+
+    .form-login {
+        background: #ffffff;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        padding: 2.5rem;
+        border-radius: 20px;
+        max-width: 400px;
+        width: 100%;
+        text-align: left;
+        border: 4px solid;
+        animation: rgb-border 5s infinite linear; /* RGB border animation */
+    }
+
+    @@keyframes rgb-border {
+        0% { border-color: rgb(255, 0, 0); } /* Red */
+        33% { border-color: rgb(0, 255, 0); } /* Green */
+        66% { border-color: rgb(0, 0, 255); } /* Blue */
+        100% { border-color: rgb(255, 0, 0); } /* Back to Red */
+    }
+
+    .form-login h1 {
+        font-size: 2.2rem;
+        color: #333333;
+        margin-bottom: 1rem;
+    }
+
+    .form-login p {
+        color: #6c757d;
+        font-size: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-floating {
+        margin-bottom: 1.2rem;
+    }
+
+    .form-floating input {
+        padding: 1rem;
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-floating input:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
+    }
+
+    .form-floating label {
+        font-size: 1rem;
+        color: #6c757d;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+        padding: 1rem;
+        font-size: 1.1rem;
+        border-radius: 10px;
+        font-weight: 600;
+        color: #ffffff;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+        border-color: #004085;
+        transform: translateY(-2px);
+    }
+
+    .alert {
+        text-align: left;
+        padding: 0.8rem;
+        margin-top: 1rem;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        font-size: 0.9rem;
+    }
+
+    .alert-danger {
+        color: #721c24;
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+    }
+
+    .debug-messages {
+        margin-top: 1rem;
+        font-size: 0.9rem;
+        color: #007bff;
+        background-color: #e9f5ff;
+        padding: 0.8rem;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .link-primary {
+        color: #007bff;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .link-primary:hover {
+        text-decoration: underline;
+        color: #0056b3;
+    }
+</style>
+
+@code {
+    [CascadingParameter]
+    private GlobalState _globalState { get; set; }
+
+    private string _username { get; set; }
+    private string _password { get; set; }
+    private string _errorMessage = string.Empty;
+    private string _debugMessage = string.Empty;
+
+    private void LoginHandler()
+    {
+        _debugMessage = "";
+        try
+        {
+            _errorMessage = "";
+            _debugMessage += $"Login attempt with username: {_username}\n";
+
+            var user = UsersService.Login(_username, _password);
+
+            if (user != null)
+            {
+                _debugMessage += "Login successful. Navigating to dashboard.\n";
+                _globalState.CurrentUser = user;
+                NavManager.NavigateTo("/dashboard");
+            }
+            else
+            {
+                _debugMessage += "Login failed. Incorrect username or password.\n";
+                _errorMessage = "Incorrect username or password. Please try again.";
+            }
+        }
+        catch (Exception e)
+        {
+            _debugMessage += $"Error details: {e.Message}\n";
+            _errorMessage = "An unexpected error occurred. Please try again later.";
+        }
+    }
+}

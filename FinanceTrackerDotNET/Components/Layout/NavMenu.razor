@@ -1,0 +1,165 @@
+﻿<div class="navbar-container">
+    <div class="navbar-header">
+        <div class="navbar-brand">
+            <a href="">FinanceTracker</a>
+        </div>
+        <input type="checkbox" id="nav-toggle" class="nav-toggle" />
+        <label for="nav-toggle" class="nav-toggle-label">
+            <span></span>
+            <span></span>
+            <span></span>
+        </label>
+    </div>
+
+    <div class="navbar-menu">
+        <nav>
+            <div class="nav-item">
+                <NavLink class="nav-link" href="register">
+                    <span class="nav-icon">📝</span> Register
+                </NavLink>
+            </div>
+            <div class="nav-item">
+                <NavLink class="nav-link" href="">
+                    <span class="nav-icon">🔑</span> Login
+                </NavLink>
+            </div>
+            <div class="nav-item">
+                <NavLink class="nav-link" href="dashboard" Match="NavLinkMatch.All">
+                    <span class="nav-icon">📊</span> Dashboard
+                </NavLink>
+            </div>
+            <div class="nav-item">
+                <NavLink class="nav-link" href="expense">
+                    <span class="nav-icon">💸</span> Expense
+                </NavLink>
+            </div>
+            <div class="nav-item">
+                <NavLink class="nav-link" href="incomeinfo">
+                    <span class="nav-icon">💰</span> Income
+                </NavLink>
+            </div>
+            <div class="nav-item">
+                <NavLink class="nav-link" href="debt">
+                    <span class="nav-icon">💳</span> Debt
+                </NavLink>
+            </div>
+            <div class="nav-item">
+                <NavLink class="nav-link" href="TotalTransaction">
+                    <span class="nav-icon">📋</span> Expense List
+                </NavLink>
+            </div>
+            <div class="nav-item">
+                <NavLink class="nav-link" href="category">
+                    <span class="nav-icon">🏷️</span> Category
+                </NavLink>
+            </div>
+            <div class="nav-item">
+                <NavLink class="nav-link" href="IncomeList">
+                    <span class="nav-icon">📜</span> Income List
+                </NavLink>
+            </div>
+            <div class="nav-item">
+                <NavLink class="nav-link" href="listdebts">
+                    <span class="nav-icon">📑</span> Debt List
+                </NavLink>
+            </div>
+        </nav>
+    </div>
+</div>
+
+<style>
+    .navbar-container {
+        background-color: #007bff; /* Primary blue */
+        color: white;
+        padding: 1rem;
+    }
+
+    .navbar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .navbar-brand a {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: white;
+        text-decoration: none;
+    }
+
+    .nav-toggle {
+        display: none;
+    }
+
+    .nav-toggle-label {
+        display: none;
+        flex-direction: column;
+        cursor: pointer;
+    }
+
+    .nav-toggle-label span {
+        width: 25px;
+        height: 3px;
+        background-color: white;
+        margin: 4px 0;
+        transition: transform 0.3s ease;
+    }
+
+    .navbar-menu {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .navbar-menu nav {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .nav-item {
+        padding: 0.5rem 1rem;
+    }
+
+    .nav-link {
+        color: white;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        transition: background-color 0.2s ease;
+    }
+
+    .nav-link:hover {
+        background-color: rgba(255, 255, 255, 0.1); /* Light hover effect */
+    }
+
+    .nav-link.active {
+        background-color: rgba(255, 255, 255, 0.2); /* Active link background */
+    }
+
+    .nav-icon {
+        font-size: 1.2rem;
+    }
+
+    /* Responsive Design */
+    @@media (max-width: 768px) {
+        .navbar-menu {
+            display: none;
+            position: absolute;
+            top: 60px;
+            left: 0;
+            width: 100%;
+            background-color: #007bff;
+            flex-direction: column;
+            padding: 1rem;
+        }
+
+        .nav-toggle:checked ~ .navbar-menu {
+            display: flex;
+        }
+
+        .nav-toggle-label {
+            display: flex;
+        }
+    }
+</style>

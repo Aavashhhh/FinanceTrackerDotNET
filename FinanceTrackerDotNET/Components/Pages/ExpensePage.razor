@@ -1,0 +1,248 @@
+@page "/expense"
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@using FinanceTrackerDotNET.Models;
+@using FinanceTrackerDotNET.Services
+
+<h3 class="text-center mb-4">Add Expense</h3>
+
+<div class="form-container">
+    <div class="form-group">
+        <label for="category" class="form-label">Category:</label>
+        <select id="category" @bind="SelectedCategory.CategoryName" class="form-control" aria-label="Select category">
+            <option value="">-- Select Category --</option>
+            @if (categories != null)
+            {
+                @foreach (var category in categories)
+                {
+                    <option value="@category.CategoryName">@category.CategoryName</option>
+                }
+            }
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="amount" class="form-label">Amount:</label>
+        <input id="amount" type="number" class="form-control" @bind="ExpenseAmount" aria-label="Enter amount" />
+    </div>
+
+    <div class="form-group">
+        <label for="remarks" class="form-label">Remarks:</label>
+        <textarea id="remarks" class="form-control" @bind="Remarks" aria-label="Enter remarks"></textarea>
+    </div>
+
+    <button class="btn btn-primary btn-lg w-100" @onclick="AddExpense" aria-label="Add expense">
+        Add Expense
+    </button>
+
+    @if (!string.IsNullOrEmpty(Message))
+    {
+        <div class="alert @AlertClass mt-3 text-center">@Message</div>
+    }
+</div>
+
+@code {
+    [CascadingParameter]
+    private GlobalState _globalState { get; set; }
+
+    private CategoryModel SelectedCategory { get; set; } = new CategoryModel();
+    private List<CategoryModel> categories = new List<CategoryModel>();
+    private int ExpenseAmount { get; set; }
+    private string Remarks { get; set; } = string.Empty;
+    private string Message { get; set; } = string.Empty;
+    private string AlertClass => Message.Contains("Error") ? "alert-danger" : "alert-info";
+
+    private Guid UserId => _globalState.CurrentUser.Id;
+    private int totalamt;
+
+    protected override async Task OnInitializedAsync()
+    {
+        totalamt = _globalState.CurrentUser.TotalAmt;
+        await AddDefaultCategories(); // Add default categories if they don't exist
+        categories = await CategoryService.GetExpenseCategoriesByUserIdAsync(_globalState.CurrentUser.Id);
+    }
+
+    private async Task AddDefaultCategories()
+    {
+        try
+        {
+            // Default Expense Categories
+            var defaultExpenseCategories = new List<string>
+            {
+                "Groceries",
+                "Utilities",
+                "Rent",
+                "Transportation",
+                "Entertainment"
+            };
+
+            // Add default expense categories
+            foreach (var cat in defaultExpenseCategories)
+            {
+                if (!CategoryExists(cat, "Expense"))
+                {
+                    CategoryService.Create(cat, "Expense", _globalState.CurrentUser.Id);
+                }
+            }
+
+            Message = "Default categories added successfully!";
+        }
+        catch (Exception ex)
+        {
+            Message = $"Error adding default categories: {ex.Message}";
+        }
+    }
+
+    private bool CategoryExists(string categoryName, string type)
+    {
+        return categories.Any(c => c.CategoryName.Equals(categoryName, StringComparison.OrdinalIgnoreCase) && c.Type == type);
+    }
+
+    private async Task AddExpense()
+    {
+        if (string.IsNullOrEmpty(SelectedCategory.CategoryName))
+        {
+            Message = "Please select a category.";
+            return;
+        }
+
+        if (ExpenseAmount <= 0)
+        {
+            Message = "Amount must be greater than 0.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(Remarks))
+        {
+            Message = "Remarks cannot be empty.";
+            return;
+        }
+
+        if (totalamt < ExpenseAmount)
+        {
+            Message = "Insufficient balance. Please check your total amount.";
+            return;
+        }
+
+        try
+        {
+            var expense = ExpenseService.Create(
+                ExpenseAmount,
+                SelectedCategory.CategoryName,
+                Remarks,
+                UserId
+            );
+
+            if (expense != null)
+            {
+                Message = "Expense added successfully!";
+                ResetForm();
+            }
+            else
+            {
+                Message = "Error: Failed to add expense.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Message = $"Error: {ex.Message}";
+        }
+    }
+
+    private void ResetForm()
+    {
+        SelectedCategory = new CategoryModel();
+        ExpenseAmount = 0;
+        Remarks = string.Empty;
+    }
+}
+
+<style>
+    :root {
+        --primary-color: #6a11cb;
+        --secondary-color: #2575fc;
+        --background-color: #ffffff;
+        --border-radius: 12px;
+        --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --gradient: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    }
+
+    .form-container {
+        background: var(--background-color);
+        padding: 2.5rem;
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        max-width: 500px;
+        margin: 50px auto;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    h3 {
+        font-size: 2rem;
+        font-weight: 600;
+        color: #333333;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        font-size: 1rem;
+        color: #555;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .form-control {
+        padding: 0.75rem;
+        font-size: 1rem;
+        border-radius: var(--border-radius);
+        border: 1px solid #ddd;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 5px rgba(106, 17, 203, 0.5);
+        }
+
+    .btn-primary {
+        background: var(--gradient);
+        border: none;
+        font-size: 1rem;
+        padding: 0.75rem;
+        border-radius: var(--border-radius);
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+    .alert {
+        font-size: 1rem;
+        padding: 0.75rem;
+        text-align: center;
+        border-radius: var(--border-radius);
+        margin-top: 1rem;
+    }
+
+    .alert-info {
+        background-color: #e3f2fd;
+        color: #1976d2;
+        border: 1px solid #90caf9;
+    }
+
+    .alert-danger {
+        background-color: #ffebee;
+        color: #c62828;
+        border: 1px solid #ef9a9a;
+    }
+</style>

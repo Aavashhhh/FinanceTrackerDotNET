@@ -1,0 +1,173 @@
+@page "/category"
+@using FinanceTrackerDotNET.Models
+@using FinanceTrackerDotNET.Services
+
+<h3 class="text-center mb-4 text-primary">Add Category</h3>
+
+<!-- Add Category Form -->
+<div class="form-container mb-4 p-4 bg-light rounded shadow-sm">
+    <EditForm Model="@category" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="form-group mb-3">
+            <label for="CategoryName" class="form-label">Category Name</label>
+            <InputText id="CategoryName" class="form-control" @bind-Value="category.CategoryName" />
+            <ValidationMessage For="@(() => category.CategoryName)" />
+        </div>
+
+        <div class="form-group mb-3">
+            <label for="Type" class="form-label">Type</label>
+            <InputSelect id="Type" class="form-control" @bind-Value="category.Type">
+                <option value="">Select Type</option>
+                <option value="Income">Income</option>
+                <option value="Expense">Expense</option>
+            </InputSelect>
+            <ValidationMessage For="@(() => category.Type)" />
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">
+            Add Category
+        </button>
+    </EditForm>
+</div>
+
+<!-- All Categories Section -->
+<h3 class="text-center mb-4 text-primary">All Categories</h3>
+
+<div class="form-container mb-4 p-4 bg-light rounded shadow-sm">
+    <div class="form-group mb-3">
+        <label for="CategoryDropdown" class="form-label">Select Category</label>
+        <select id="CategoryDropdown" class="form-control" @bind="SelectedCategoryId">
+            <option value="">-- Select Category --</option>
+            @if (categories != null)
+            {
+                @foreach (var category in categories)
+                {
+                    <option value="@category.CategoryId">@category.CategoryName (@category.Type)</option>
+                }
+            }
+        </select>
+    </div>
+</div>
+
+<!-- Messages -->
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mt-3 text-center">@errorMessage</div>
+}
+
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success mt-3 text-center">@successMessage</div>
+}
+
+@code {
+    [CascadingParameter]
+    private GlobalState _globalState { get; set; }
+
+    private CategoryModel category = new CategoryModel();
+    private List<CategoryModel> categories = new List<CategoryModel>();
+    private Guid? SelectedCategoryId { get; set; }
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCategories(); // Load all categories
+    }
+
+    private async Task LoadCategories()
+    {
+        try
+        {
+            categories = CategoryService.GetAll();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading categories: {ex.Message}";
+        }
+    }
+
+    private void HandleValidSubmit()
+    {
+        try
+        {
+            var createdCategories = CategoryService.Create(category.CategoryName, category.Type, _globalState.CurrentUser.Id);
+            successMessage = "Category added successfully!";
+            errorMessage = string.Empty;
+            category = new CategoryModel(); // Reset the form
+            LoadCategories(); // Refresh the category list
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+            successMessage = string.Empty;
+        }
+    }
+}
+
+<style>
+    .form-container {
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        font-size: 1rem;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+        padding: 0.75rem;
+        font-size: 1rem;
+        border-radius: 0.5rem;
+        border: 1px solid #ccc;
+        transition: all 0.3s ease;
+    }
+
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+        }
+
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+        font-size: 1rem;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #004085;
+        }
+
+    .alert {
+        font-size: 1rem;
+        padding: 1rem;
+        text-align: center;
+        border-radius: 0.5rem;
+    }
+
+    .alert-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+</style>

@@ -1,0 +1,217 @@
+@page "/IncomeList"
+@using FinanceTrackerDotNET.Models
+@using FinanceTrackerDotNET.Services
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<h3 class="text-center mb-4 text-primary">Your Income</h3>
+
+<!-- Filters Container -->
+<div class="filters-container mb-4 p-3 bg-light rounded shadow-sm">
+    <div class="d-flex flex-wrap gap-3 align-items-center">
+        <!-- Sort Button -->
+        <button class="btn btn-primary d-flex align-items-center gap-2" @onclick="ToggleSortOrder">
+            <span class="material-icons">sort</span>
+            Sort by Amount (@(isAscending ? "Ascending" : "Descending"))
+        </button>
+
+        <!-- Category Dropdown -->
+        <select class="form-select w-auto" @onchange="FilterByCategory">
+            <option value="">All Categories</option>
+            @foreach (var category in categories)
+            {
+                <option value="@category" selected="@(category == selectedCategory)">@category</option>
+            }
+        </select>
+
+        <!-- Search Input -->
+        <div class="input-group search-group flex-grow-1">
+            <input type="text" class="form-control rounded-start"
+                   placeholder="Search by remarks..."
+                   @bind="searchTerm" />
+            <button class="btn btn-outline-secondary rounded-end" @onclick="SearchByRemarks">🔍</button>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Spinner -->
+@if (filteredIncome == null)
+{
+    <div class="d-flex justify-content-center">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else if (filteredIncome.Count == 0)
+{
+    <!-- No Income Found -->
+    <div class="alert alert-warning text-center rounded shadow-sm">
+        No income records found.
+    </div>
+}
+else
+{
+    <!-- Income Table -->
+    <div class="table-responsive rounded shadow-sm">
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th scope="col">Amount</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var income in filteredIncome)
+                {
+                    <tr>
+                        <td class="fw-bold text-success">@income.income_Amount.ToString("C")</td>
+                        <td>@income.Category</td>
+                        <td title="@income.Remarks">@income.Remarks</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<Incomeinfo> incomeRecords;
+    private List<Incomeinfo> filteredIncome;
+    private List<string> categories = new();
+    private string selectedCategory = "";
+    private string searchTerm = "";
+    private bool isAscending = true;
+
+    [CascadingParameter]
+    private GlobalState GlobalState { get; set; }
+
+    protected override void OnInitialized()
+    {
+        // Get current user's ID from global state
+        var userId = GlobalState.CurrentUser.Id;
+
+        // Fetch all incomes for the logged-in user
+        incomeRecords = IncomeService.GetByUserId(userId);
+
+        // Extract unique categories
+        categories = incomeRecords.Select(e => e.Category.ToString()).Distinct().ToList();
+
+        // Initialize filteredIncome with all income records
+        filteredIncome = new List<Incomeinfo>(incomeRecords);
+    }
+
+    private void ToggleSortOrder()
+    {
+        isAscending = !isAscending;
+        ApplyFilters();
+    }
+
+    private void FilterByCategory(ChangeEventArgs e)
+    {
+        selectedCategory = e.Value?.ToString() ?? "";
+        ApplyFilters();
+    }
+
+    private void SearchByRemarks()
+    {
+        ApplyFilters();
+    }
+
+    private void ApplyFilters()
+    {
+        var result = incomeRecords;
+
+        // Filter by category if a category is selected
+        if (!string.IsNullOrEmpty(selectedCategory))
+        {
+            result = result.Where(e => e.Category.ToString() == selectedCategory).ToList();
+        }
+
+        // Filter by search term if provided
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            result = result.Where(e => e.Remarks.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+
+        // Apply sorting
+        result = isAscending ? result.OrderBy(e => e.income_Amount).ToList() : result.OrderByDescending(e => e.income_Amount).ToList();
+
+        // Update the filtered list
+        filteredIncome = result;
+    }
+}
+
+<style>
+    :root {
+        --primary-color: #28a745; /* Green */
+        --secondary-color: #218838; /* Darker Green */
+        --background-color: #ffffff;
+        --border-radius: 12px;
+        --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --gradient: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    }
+
+    .filters-container {
+        background: var(--background-color);
+        padding: 1rem;
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+    }
+
+    .btn-primary {
+        background: var(--gradient);
+        border: none;
+        font-size: 1rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: var(--border-radius);
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+    .form-select, .form-control {
+        padding: 0.75rem;
+        font-size: 1rem;
+        border-radius: var(--border-radius);
+        border: 1px solid #ddd;
+        transition: all 0.3s ease;
+    }
+
+        .form-select:focus, .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 5px rgba(40, 167, 69, 0.5);
+        }
+
+    .table {
+        border-radius: var(--border-radius);
+        overflow: hidden;
+    }
+
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: rgba(40, 167, 69, 0.05);
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(40, 167, 69, 0.1);
+    }
+
+    .alert {
+        font-size: 1rem;
+        padding: 0.75rem;
+        text-align: center;
+        border-radius: var(--border-radius);
+    }
+
+    .alert-warning {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeeba;
+    }
+</style>

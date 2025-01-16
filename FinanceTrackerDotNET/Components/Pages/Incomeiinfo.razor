@@ -1,0 +1,195 @@
+@page "/incomeinfo"
+@using FinanceTrackerDotNET.Models
+@using FinanceTrackerDotNET.Services
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+<h3 class="text-center mb-4">Add Income</h3>
+
+<div class="form-container">
+    <div class="form-group">
+        <label for="category" class="form-label">Category:</label>
+        <select id="category" @bind="SelectedCategory.CategoryName" class="form-control">
+            <option value=""> Select Category </option>
+            @if (categories != null)
+            {
+                @foreach (var category in categories)
+                {
+                    <option value="@category.CategoryName">@category.CategoryName</option>
+                }
+            }
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="amount" class="form-label">Amount:</label>
+        <input id="amount" type="number" class="form-control" @bind="IncomeAmount" />
+    </div>
+
+    <div class="form-group">
+        <label for="remarks" class="form-label">Remarks:</label>
+        <textarea id="remarks" class="form-control" @bind="Remarks"></textarea>
+    </div>
+
+    <button class="btn btn-success btn-lg w-100" @onclick="AddIncome">
+        Add Income
+    </button>
+
+    @if (!string.IsNullOrEmpty(Message))
+    {
+        <div class="alert alert-info mt-3 text-center">@Message</div>
+    }
+</div>
+
+@code {
+    [CascadingParameter]
+    private GlobalState _globalState { get; set; }
+
+    private CategoryModel selectedCategory = new CategoryModel();
+    private CategoryModel SelectedCategory { get; set; } = new CategoryModel();
+    private int IncomeAmount { get; set; }
+    private string Remarks { get; set; } = string.Empty;
+    private string Message { get; set; } = string.Empty;
+    private List<CategoryModel> categories = new List<CategoryModel>();
+    private Guid UserId => _globalState.CurrentUser.Id;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AddDefaultCategories(); // Add default income categories if they don't exist
+        categories = await CategoryService.GetCategoriesByUserIdAsync(_globalState.CurrentUser.Id);
+    }
+
+    private async Task AddDefaultCategories()
+    {
+        try
+        {
+            // Default Income Categories
+            var defaultIncomeCategories = new List<string>
+            {
+                "Salary",
+                "Bonus",
+                "Freelance",
+                "Investments",
+                "Gifts"
+            };
+
+            // Add default income categories
+            foreach (var cat in defaultIncomeCategories)
+            {
+                if (!CategoryExists(cat, "Income"))
+                {
+                    CategoryService.Create(cat, "Income", _globalState.CurrentUser.Id);
+                }
+            }
+
+            Message = "Default income categories added successfully!";
+        }
+        catch (Exception ex)
+        {
+            Message = $"Error adding default income categories: {ex.Message}";
+        }
+    }
+
+    private bool CategoryExists(string categoryName, string type)
+    {
+        return categories.Any(c => c.CategoryName.Equals(categoryName, StringComparison.OrdinalIgnoreCase) && c.Type == type);
+    }
+
+    private async Task AddIncome()
+    {
+        if (SelectedCategory == null || IncomeAmount <= 0 || string.IsNullOrWhiteSpace(Remarks))
+        {
+            Message = "Please fill out all fields correctly.";
+            return;
+        }
+
+        try
+        {
+            var income = IncomeService.Create(
+                IncomeAmount,
+                SelectedCategory.CategoryName,
+                Remarks,
+                UserId
+            );
+
+            Message = "Income added successfully!";
+        }
+        catch (Exception ex)
+        {
+            Message = $"Error: {ex.Message}";
+        }
+    }
+}
+
+<style>
+    .form-container {
+        background: #f9f9f9;
+        padding: 3rem;
+        border-radius: 16px;
+        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        max-width: 600px;
+        margin: 50px auto;
+        font-family: 'Roboto', sans-serif;
+    }
+
+    h3 {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #333333;
+        text-align: center;
+    }
+
+    .form-group {
+        margin-bottom: 2rem;
+    }
+
+    .form-label {
+        font-size: 1.1rem;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+        padding: 1.2rem;
+        font-size: 1.1rem;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 5px rgba(40, 167, 69, 0.5);
+    }
+
+    .btn-success {
+        background-color: #28a745;
+        border-color: #28a745;
+        font-size: 1.2rem;
+        padding: 1.2rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-success:hover {
+        background-color: #218838;
+        border-color: #1e7e34;
+    }
+
+    .alert {
+        font-size: 1.1rem;
+        padding: 1rem;
+        text-align: center;
+        border-radius: 8px;
+    }
+
+    .alert-info {
+        background-color: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+    }
+
+    .alert-info i {
+        margin-right: 10px;
+    }
+</style>

@@ -1,0 +1,337 @@
+@page "/dashboard"
+@using FinanceTrackerDotNET.Services
+@using FinanceTrackerDotNET.Models;
+@using FinanceTrackerDotNET.Components;
+
+<div class="dashboard-container">
+    <!-- Header Section -->
+    <div class="header-container">
+        <h1>Welcome Back, <span class="username">@_username</span>!</h1>
+        <p class="subtitle">Track your finances and stay on top of your budget.</p>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+        <div class="card expense-card">
+            <h3>Total Expense</h3>
+            <p class="amount">@totalExpense.ToString("C")</p>
+            <p class="loading-text" style="@(totalExpense == 0 ? "display: block;" : "display: none;")">Loading...</p>
+        </div>
+
+        <div class="card income-card">
+            <h3>Total Income</h3>
+            <p class="amount">@totalIncome.ToString("C")</p>
+            <p class="loading-text" style="@(totalIncome == 0 ? "display: block;" : "display: none;")">Loading...</p>
+        </div>
+
+        <div class="card debt-card">
+            <h3>Total Debt</h3>
+            <p class="amount">@totalDebt.ToString("C")</p>
+            <p class="loading-text" style="@(totalDebt == 0 ? "display: block;" : "display: none;")">Loading...</p>
+        </div>
+    </div>
+
+    <!-- Pie Chart Section -->
+    <div class="chart-container">
+        <h3>Income vs Expense</h3>
+        <MudPaper Class="chart-paper">
+            <MudChart ChartType="ChartType.Pie" InputData="@data" @bind-SelectedIndex="Index" InputLabels="@labels" Width="100%" Height="300px" />
+        </MudPaper>
+    </div>
+
+    <!-- Income Tables -->
+    <div class="tables-container">
+        <div class="table-section">
+            <h3>Top 5 Highest Incomes</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Amount</th>
+                        <th>Category</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var income in top5HighestIncomes)
+                    {
+                        <tr>
+                            <td>@income.income_Amount.ToString("C")</td>
+                            <td>@income.Category</td>
+                            <td>@income.Remarks</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-section">
+            <h3>Top 5 Lowest Incomes</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Amount</th>
+                        <th>Category</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var income in top5LowestIncomes)
+                    {
+                        <tr>
+                            <td>@income.income_Amount.ToString("C")</td>
+                            <td>@income.Category</td>
+                            <td>@income.Remarks</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Expense Tables -->
+    <div class="tables-container">
+        <div class="table-section">
+            <h3>Top 5 Highest Expenses</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Amount</th>
+                        <th>Category</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var expense in top5HighestExpenses)
+                    {
+                        <tr>
+                            <td>@expense.Amount.ToString("C")</td>
+                            <td>@expense.Category</td>
+                            <td>@expense.Remarks</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-section">
+            <h3>Top 5 Lowest Expenses</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Amount</th>
+                        <th>Category</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var expense in top5LowestExpenses)
+                    {
+                        <tr>
+                            <td>@expense.Amount.ToString("C")</td>
+                            <td>@expense.Category</td>
+                            <td>@expense.Remarks</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Global Styles */
+    body {
+        margin: 0;
+        font-family: 'Arial', sans-serif;
+        background: #f5f7fa;
+        color: #333;
+        line-height: 1.6;
+    }
+
+    .dashboard-container {
+        max-width: 1400px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+
+    /* Header Section */
+    .header-container {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    h1 {
+        font-size: 2.5rem;
+        color: #007bff;
+        margin-bottom: 10px;
+    }
+
+    .username {
+        color: #0056b3;
+        font-weight: bold;
+    }
+
+    .subtitle {
+        font-size: 1.2rem;
+        color: #666;
+    }
+
+    /* Summary Cards */
+    .summary-cards {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+
+    .card {
+        flex: 1;
+        padding: 20px;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .expense-card {
+        background: linear-gradient(135deg, #ff6b6b, #ff4757);
+        color: white;
+    }
+
+    .income-card {
+        background: linear-gradient(135deg, #4cd137, #44bd32);
+        color: white;
+    }
+
+    .debt-card {
+        background: linear-gradient(135deg, #ff9f43, #ff7f50);
+        color: white;
+    }
+
+    .card h3 {
+        font-size: 1.5rem;
+        margin-bottom: 10px;
+    }
+
+    .card .amount {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+
+    .loading-text {
+        font-size: 1.2rem;
+        color: rgba(255, 255, 255, 0.8);
+        font-style: italic;
+    }
+
+    /* Chart Section */
+    .chart-container {
+        margin-bottom: 40px;
+    }
+
+    .chart-container h3 {
+        font-size: 1.8rem;
+        color: #007bff;
+        margin-bottom: 20px;
+    }
+
+    .chart-paper {
+        padding: 20px;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Tables Section */
+    .tables-container {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+
+    .table-section {
+        flex: 1;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+    }
+
+    .table-section h3 {
+        font-size: 1.5rem;
+        color: #007bff;
+        margin-bottom: 20px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+
+    th {
+        background-color: #007bff;
+        color: white;
+    }
+
+    tr:hover {
+        background-color: #f1f1f1;
+    }
+</style>
+
+@code {
+    [CascadingParameter]
+    private GlobalState _globalState { get; set; }
+    private int totalExpense;
+    private int totalIncome;
+    private int totalDebt;
+    private string _username;
+    private List<Incomeinfo> top5HighestIncomes = new List<Incomeinfo>();
+    private List<Incomeinfo> top5LowestIncomes = new List<Incomeinfo>();
+    private List<ExpenseModel> top5HighestExpenses = new List<ExpenseModel>();
+    private List<ExpenseModel> top5LowestExpenses = new List<ExpenseModel>();
+    private int Index = -1;
+    double[] data = { };
+    string[] labels = { "Income", "Expense" };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _username = _globalState.CurrentUser.UserName;
+        if (_globalState?.CurrentUser?.Id == null)
+        {
+            totalExpense = 0;
+            totalIncome = 0;
+            totalDebt = 0;
+            return;
+        }
+
+        var userId = _globalState.CurrentUser.Id;
+
+        totalExpense = ExpenseService.GetTotalExpense(userId);
+        totalIncome = IncomeService.GetTotalIncome(userId);
+        totalDebt = DebtService.GetTotalDebt(userId);
+
+        data = new double[] { totalIncome, totalExpense };
+
+        // Fetch and sort incomes
+        var allIncomes = IncomeService.GetByUserId(userId);
+        top5HighestIncomes = allIncomes.OrderByDescending(x => x.income_Amount).Take(5).ToList();
+        top5LowestIncomes = allIncomes.OrderBy(x => x.income_Amount).Take(5).ToList();
+
+        // Fetch and sort expenses
+        var allExpenses = ExpenseService.GetByUserId(userId);
+        top5HighestExpenses = allExpenses.OrderByDescending(x => x.Amount).Take(5).ToList();
+        top5LowestExpenses = allExpenses.OrderBy(x => x.Amount).Take(5).ToList();
+    }
+}
+}

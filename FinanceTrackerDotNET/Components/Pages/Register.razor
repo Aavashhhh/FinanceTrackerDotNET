@@ -1,0 +1,202 @@
+﻿@page "/register"
+@using FinanceTrackerDotNET.Services
+@using FinanceTrackerDotNET.Models
+@inject NavigationManager NavigationManager
+
+<div class="register-body">
+    <div class="form-register">
+        <form class="text-center" @onsubmit="HandleRegistration">
+            <h1 class="h3 mb-3 fw-normal">🌟 Create Your Account</h1>
+            <p class="text-muted">Sign up to track your expenses and manage your finances effortlessly. 💸</p>
+
+            @if (!string.IsNullOrEmpty(ErrorMessage))
+            {
+                    <div class="alert alert-danger">⚠️ @ErrorMessage</div>
+            }
+
+            @if (!string.IsNullOrEmpty(SuccessMessage))
+            {
+                    <div class="alert alert-success">🎉 @SuccessMessage</div>
+            }
+
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control username" @bind="NewUser.UserName" placeholder="Username" required />
+                <label for="username">👤 Username</label>
+            </div>
+            <div class="form-floating mb-3">
+                <input type="password" class="form-control password" @bind="NewUser.userPasswordHash" placeholder="Password" required minlength="6" />
+                <label for="password">🔒 Password</label>
+            </div>
+            <div class="form-floating mb-4">
+                <input type="text" class="form-control currency" @bind="NewUser.preCurrency" placeholder="Preferred Currency" required />
+                <label for="currency">💵 Preferred Currency</label>
+            </div>
+
+            <button class="w-100 btn btn-lg btn-primary" type="submit">
+                <i class="fas fa-user-plus"></i> Register 🚀
+            </button>
+
+            <p class="mt-4 text-muted">
+                Already have an account? <a href="javascript:void(0);" class="link-primary" @onclick="NavigateToLogin">👉 Sign in</a>
+            </p>
+        </form>
+    </div>
+</div>
+
+<style>
+    .register-body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        font-family: 'Poppins', sans-serif; /* Modern font */
+    }
+
+    .form-register {
+        background: #ffffff;
+        box-shadow: 0 12px 25px rgba(0, 0, 0, 0.1);
+        padding: 2.5rem;
+        border-radius: 16px;
+        max-width: 450px;
+        width: 100%;
+        margin: 0 auto;
+        text-align: left;
+        border: 4px solid;
+        animation: rgb-border 5s infinite linear; /* RGB border animation */
+    }
+
+    @@keyframes rgb-border {
+        0% { border-color: rgb(255, 0, 0); } /* Red */
+        33% { border-color: rgb(0, 255, 0); } /* Green */
+        66% { border-color: rgb(0, 0, 255); } /* Blue */
+        100% { border-color: rgb(255, 0, 0); } /* Back to Red */
+    }
+
+    h1 {
+        font-size: 2rem;
+        color: #007bff;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+
+    p {
+        font-size: 1rem;
+        color: #6c757d;
+        margin-bottom: 2rem;
+    }
+
+    .form-floating {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-floating input {
+        padding: 1rem;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        font-size: 1rem;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .form-floating input:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
+    }
+
+    .form-floating label {
+        font-size: 1rem;
+        color: #6c757d;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        border: none;
+        padding: 1rem;
+        font-size: 1.1rem;
+        border-radius: 10px;
+        color: #ffffff;
+        font-weight: bold;
+        transition: background 0.3s ease, transform 0.2s ease;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #0056b3, #003c8f);
+        transform: translateY(-2px);
+    }
+
+    .alert {
+        text-align: left;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        font-size: 0.9rem;
+    }
+
+    .alert-danger {
+        color: #721c24;
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+    }
+
+    .alert-success {
+        color: #155724;
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+    }
+
+    .link-primary {
+        color: #007bff;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .link-primary:hover {
+        text-decoration: underline;
+        color: #0056b3;
+    }
+</style>
+
+@code {
+    private User NewUser = new User();
+    private string ErrorMessage;
+    private string SuccessMessage;
+
+    private async Task HandleRegistration()
+    {
+        try
+        {
+            // Validate inputs
+            if (string.IsNullOrEmpty(NewUser.UserName) || string.IsNullOrEmpty(NewUser.userPasswordHash) || string.IsNullOrEmpty(NewUser.preCurrency))
+            {
+                throw new Exception("All fields are required! 🛑");
+            }
+
+            if (NewUser.userPasswordHash.Length < 6)
+            {
+                throw new Exception("Password must be at least 6 characters long! 🔐");
+            }
+
+            // Simulate user creation (replace with actual service call)
+            var userId = Guid.NewGuid();
+            UsersService.Create(userId, NewUser.UserName, NewUser.userPasswordHash, NewUser.preCurrency);
+
+            // Show success message
+            SuccessMessage = "Registration successful! Welcome aboard! 🎉";
+            ErrorMessage = string.Empty;
+
+            // Redirect to login after 2 seconds
+            await Task.Delay(2000);
+            NavigationManager.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+            SuccessMessage = string.Empty;
+        }
+    }
+
+    private void NavigateToLogin()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+}

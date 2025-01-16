@@ -1,0 +1,28 @@
+﻿@inherits LayoutComponentBase
+
+<div class="page">
+    @if (_globalState.CurrentUser != null)
+    {
+        <div class="sidebar">
+            <NavMenu/>
+        </div> 
+    }
+    
+
+    <main>
+
+        <article class="content px-4">
+            <CascadingValue Value="@_globalState">
+                @Body
+            </CascadingValue>
+        </article>
+    </main>
+</div>
+
+
+
+@code{
+
+    private GlobalState _globalState = new();
+
+}
