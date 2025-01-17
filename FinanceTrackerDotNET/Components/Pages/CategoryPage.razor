@@ -38,11 +38,12 @@
 <div class="form-container mb-4 p-4 bg-light rounded shadow-sm">
     <div class="form-group mb-3">
         <label for="CategoryDropdown" class="form-label">Select Category</label>
-        <select id="CategoryDropdown" class="form-control" @bind="SelectedCategoryId">
+        <select id="CategoryDropdown" class="form-control" value="@SelectedCategoryId" @onchange="HandleCategorySelection">
             <option value="">-- Select Category --</option>
             @if (categories != null)
             {
                 @foreach (var category in categories)
+
                 {
                     <option value="@category.CategoryId">@category.CategoryName (@category.Type)</option>
                 }
@@ -53,57 +54,142 @@
 
 <!-- Messages -->
 @if (!string.IsNullOrEmpty(errorMessage))
+
 {
     <div class="alert alert-danger mt-3 text-center">@errorMessage</div>
 }
 
 @if (!string.IsNullOrEmpty(successMessage))
+
 {
     <div class="alert alert-success mt-3 text-center">@successMessage</div>
 }
 
 @code {
     [CascadingParameter]
+
     private GlobalState _globalState { get; set; }
 
+
+
     private CategoryModel category = new CategoryModel();
+
     private List<CategoryModel> categories = new List<CategoryModel>();
+
     private Guid? SelectedCategoryId { get; set; }
+
     private string errorMessage = string.Empty;
+
     private string successMessage = string.Empty;
 
+
+
     protected override async Task OnInitializedAsync()
+
     {
+
         await LoadCategories(); // Load all categories
+
     }
+
+
 
     private async Task LoadCategories()
+
     {
+
         try
+
         {
+
             categories = CategoryService.GetAll();
+
         }
+
         catch (Exception ex)
+
         {
+
             errorMessage = $"Error loading categories: {ex.Message}";
+
         }
+
     }
 
+
+
     private void HandleValidSubmit()
+
     {
+
         try
+
         {
+
             var createdCategories = CategoryService.Create(category.CategoryName, category.Type, _globalState.CurrentUser.Id);
+
             successMessage = "Category added successfully!";
+
             errorMessage = string.Empty;
+
             category = new CategoryModel(); // Reset the form
+
             LoadCategories(); // Refresh the category list
+
         }
+
         catch (Exception ex)
+
         {
+
             errorMessage = ex.Message;
+
             successMessage = string.Empty;
+
         }
+
+    }
+
+
+
+    private void HandleCategorySelection(ChangeEventArgs e)
+
+    {
+
+        var selectedId = e.Value?.ToString();
+
+        if (!string.IsNullOrEmpty(selectedId) && Guid.TryParse(selectedId, out var categoryId))
+
+        {
+
+            SelectedCategoryId = categoryId; // Update the selected category ID
+
+            var selectedCategory = categories.FirstOrDefault(c => c.CategoryId == categoryId);
+
+            if (selectedCategory != null)
+
+            {
+
+                category.CategoryName = selectedCategory.CategoryName;
+
+                category.Type = selectedCategory.Type;
+
+            }
+
+        }
+
+        else
+
+        {
+
+            SelectedCategoryId = null; // Reset the selected category ID
+
+            category.CategoryName = string.Empty;
+
+            category.Type = string.Empty;
+
+        }
+
     }
 }
 

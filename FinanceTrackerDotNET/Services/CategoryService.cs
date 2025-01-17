@@ -24,37 +24,30 @@ public static class CategoryService
         string appCategoriesFilePath = Utils.GetCategoryFilePath();
         if (!File.Exists(appCategoriesFilePath))
         {
-            // Load default categories and tags if the file doesn't exist
-            // Load default categories and tags if the file doesn't exist
-            var defaultCategories = new List<CategoryModel>
-{
-    // Default Income Categories
-    new CategoryModel { CategoryName = "Salary", Type = "Income", CreatedBy = Guid.NewGuid() },
-    new CategoryModel { CategoryName = "Freelance", Type = "Income", CreatedBy = Guid.NewGuid() },
-    new CategoryModel { CategoryName = "Investment", Type = "Income", CreatedBy = Guid.NewGuid() },
-    new CategoryModel { CategoryName = "Bonus", Type = "Income", CreatedBy = Guid.NewGuid() },
-    new CategoryModel { CategoryName = "Rental Income", Type = "Income", CreatedBy = Guid.NewGuid() },
-    new CategoryModel { CategoryName = "Gifts", Type = "Income", CreatedBy = Guid.NewGuid() },
-    new CategoryModel { CategoryName = "Dividends", Type = "Income", CreatedBy = Guid.NewGuid() },
-    new CategoryModel { CategoryName = "Side Hustle", Type = "Income", CreatedBy = Guid.NewGuid() },
-
-    // Default Expense Categories
-    new CategoryModel { CategoryName = "Vacation", Type = "Expense", CreatedBy = Guid.NewGuid() },
-    new CategoryModel { CategoryName = "Food", Type = "Expense", CreatedBy = Guid.NewGuid() },
-    new CategoryModel { CategoryName = "Clothes", Type = "Expense", CreatedBy = Guid.NewGuid() },
-    new CategoryModel { CategoryName = "Rent", Type = "Expense", CreatedBy = Guid.NewGuid() },
-    new CategoryModel { CategoryName = "Healthcare", Type = "Expense", CreatedBy = Guid.NewGuid() },
-    new CategoryModel { CategoryName = "Utilities", Type = "Expense", CreatedBy = Guid.NewGuid() },
-    new CategoryModel { CategoryName = "Transportation", Type = "Expense", CreatedBy = Guid.NewGuid() },
-    new CategoryModel { CategoryName = "Entertainment", Type = "Expense", CreatedBy = Guid.NewGuid() }
-};
-
-            SaveAll(defaultCategories);
-            return defaultCategories;
+            // Initialize the file with an empty JSON array if it doesn't exist
+            SaveAll(new List<CategoryModel>());
+            return new List<CategoryModel>();
         }
 
         var json = File.ReadAllText(appCategoriesFilePath);
-        return JsonSerializer.Deserialize<List<CategoryModel>>(json);
+
+        // Handle empty or invalid JSON files
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            SaveAll(new List<CategoryModel>());
+            return new List<CategoryModel>();
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<List<CategoryModel>>(json);
+        }
+        catch (JsonException)
+        {
+            // If the JSON is invalid, reset the file with an empty list
+            SaveAll(new List<CategoryModel>());
+            return new List<CategoryModel>();
+        }
     }
 
     public static List<CategoryModel> Create(string categoryName, string type, Guid createdBy)
